@@ -52,40 +52,7 @@
     if (this.scale < 1) {
       this.scale = 1;
     }
-    // Get info from meta data.
-    var meta = $(
-      this.type == 'android'
-        ? 'meta[name="google-play-app"]'
-        : (this.type == 'ios'
-            ? 'meta[name="apple-itunes-app"]'
-            : (this.type == 'kindle'
-                ? 'meta[name="kindle-fire-app"]'
-                : 'meta[name="msApplication-ID"]'
-              )
-          )
-    );
 
-    if (!meta.length) {
-      return;
-    }
-    // For Windows Store apps, get the PackageFamilyName for protocol launch.
-    if (this.type == 'windows') {
-      if (isEdge) {
-        this.appId = $('meta[name="msApplication-PackageEdgeName"]').attr('content');
-      }
-      if (!this.appId) {
-        this.appId = $('meta[name="msApplication-PackageFamilyName"]').attr('content');
-      }
-    }
-    else {
-      // Try to pull the appId out of the meta tag and store the result.
-      var parsedMetaContent = /app-id=([^\s,]+)/.exec(meta.attr('content'));
-      if (parsedMetaContent) {
-        this.appId = parsedMetaContent[1];
-      } else {
-        return;
-      }
-    }
     this.title = this.options.title
       ? this.options.title
       : (meta.data('title') || $('title').text().replace(/\s*[|\-·].*$/, ''));
@@ -123,19 +90,7 @@
       var iconURL;
       var price = this.price || this.options.price;
 
-      var link = this.options.url || (function() {
-        switch (this.type) {
-          case 'android':
-            return 'market://details?id=';
-          case 'kindle':
-            return 'amzn://apps/android?asin=';
-          case 'windows':
-            return isEdge
-              ? 'ms-windows-store://pdp/?productid='
-              : 'ms-windows-store:navigate?appid=';
-        }
-        return 'https://itunes.apple.com/' + this.options.appStoreLanguage + '/app/id';
-      }.call(this) + this.appId);
+      this.parseAppId();
 
       var inStore = !price ? '' : (function() {
         var result = price + ' - ';
@@ -154,9 +109,7 @@
         ? (this.type=='ios')
         : this.options.iconGloss;
 
-      if (this.type == 'android' && this.options.GooglePlayParams) {
-        link += '&referrer=' + this.options.GooglePlayParams;
-      }
+
       var banner = (
         '<div id="smartbanner" class="' + this.type + '">' +
           '<div class="sb-container">' +
@@ -167,7 +120,7 @@
               '<span>' + this.author + '</span>' +
               '<span>' + inStore + '</span>' +
             '</div>' +
-            '<a href="' + link + '" class="sb-button">' +
+            '<a class="sb-button">' +
               '<span>' + this.options.button + '</span>' +
             '</a>' +
           '</div>' +
@@ -319,6 +272,7 @@
       if (this.options.hideOnInstall) {
         this.hide();
       }
+      this.launch();
       this.setCookie('sb-installed', 'true', this.options.daysReminder);
       this.options.onInstall(e);
     },
@@ -343,19 +297,138 @@
       return null;
     },
 
-    // Demo only.
-    switchType: function() {
-      var that = this;
+    parseAppId: function() {
+      return this.appId = this.parseAppIdFromOptions() || this.parseAppIdFromMeta();
+    },
 
-      this.hide(function() {
-        that.type = that.type == 'android' ? 'ios' : 'android';
-        var meta = $(that.type == 'android' ? 'meta[name="google-play-app"]' : 'meta[name="apple-itunes-app"]').attr('content');
-        that.appId = /app-id=([^\s,]+)/.exec(meta)[1];
+    parseAppIdFromOptions: function() {
+      var appId = this.type == 'android'
+        ? this.options.playAppId
+        : (this.type == 'ios'
+            ? this.options.itunesAppId
+            : (this.type == 'kindle'
+              ? this.options.kindleAppId
+              : this.options.msAppId));
+    },
 
-        $('#smartbanner').detach();
-        that.create();
-        that.show();
-      });
+    parseAppIdFromMeta: function() {
+      var appId;
+      // Get info from meta data.
+      var meta = $(
+        this.type == 'android'
+          ? 'meta[name="google-play-app"]'
+          : (this.type == 'ios'
+              ? 'meta[name="apple-itunes-app"]'
+              : (this.type == 'kindle'
+                  ? 'meta[name="kindle-fire-app"]'
+                  : 'meta[name="msApplication-ID"]'
+                )
+            )
+      );
+
+      if (!meta.length) {
+        return;
+      }
+      // For Windows Store apps, get the PackageFamilyName for protocol launch.
+      if (this.type == 'windows') {
+        if (isEdge) {
+          appId = $('meta[name="msApplication-PackageEdgeName"]').attr('content');
+        }
+        if (!appId) {
+          appId = $('meta[name="msApplication-PackageFamilyName"]').attr('content');
+        }
+      }
+      else {
+        // Try to pull the appId out of the meta tag and store the result.
+        var parsedMetaContent = /app-id=([^\s,]+)/.exec(meta.attr('content'));
+        if (parsedMetaContent) {
+          appId = parsedMetaContent[1];
+        }
+      }
+      return appId;
+    },
+
+    getAppStoreLink: function() {
+      var link;
+      switch (this.type) {
+        case 'ios':
+          link = 'https://itunes.apple.com/' + this.options.appStoreLanguage + '/app/id';
+          break;
+        case 'android':
+          link = 'market://details?id=';
+          break;
+        case 'kindle':
+          link = 'amzn://apps/android?asin=';
+          break;
+        case 'windows':
+          link = isEdge
+            ? 'ms-windows-store://pdp/?productid='
+            : 'ms-windows-store:navigate?appid=';
+          break;
+      }
+
+      if (link) {
+        link += this.appId;
+
+        if (this.type == 'android' && this.options.GooglePlayParams) {
+          link += '&referrer=' + this.options.GooglePlayParams;
+        }
+      }
+
+      return link;
+    },
+
+    launch: function() {
+      if (!this.appStoreTimer) {  // No ongoing launch
+        var link = this.options.url();
+
+        if (link) {
+          var that = this;
+          that.openApp(link);
+          var timesnap = Date.now();
+          that.heartbeatTimer = setInterval(function () {
+            if (that.isDocumentHidden()) {
+              that.clearTimers();
+            }
+          }, 200);
+          that.appStoreTimer = setTimeout(function () {
+            if (!that.isDocumentHidden() && (Date.now() - timesnap < 1500)) { // document not hidden and timeout expired
+              that.clearTimers();
+              that.openAppStore();
+            }
+          }, 1000);
+        } else {
+          this.openAppStore();
+        }
+      }
+    },
+
+    openApp: function(link) {
+      this.setLocation(link);
+    },
+
+    setLocation: function(location) {
+      document.location = location;
+    },
+
+    openAppStore: function() {
+      this.setLocation(this.getAppStoreLink());
+    },
+
+    isDocumentHidden: function() {
+      return document.webkitHidden || document.hidden;
+    },
+
+    clearTimers: function() {
+      if (this.heartbeatTimer) {
+        clearInterval(this.heartbeatTimer);
+        delete this.heartbeatTimer;
+      }
+
+      if (this.appStoreTimer) {
+        clearTimeout(this.appStoreTimer);
+        delete this.appStoreTimer;
+      }
     }
   };
 
@@ -385,7 +458,7 @@
     icon: null, // The URL of the icon (defaults to <meta name="apple-touch-icon">)
     iconGloss: null, // Force gloss effect for iOS even for precomposed
     button: 'VIEW', // Text for the install button
-    url: null, // The URL for the button. Keep null if you want the button to link to the app store.
+    url: function() { return ''; }, // The URL for the button. Keep null if you want the button to link to the app store.
     scale: 'auto', // Scale based on viewport size (set to 1 to disable)
     speedIn: 300, // Show animation speed of the banner
     speedOut: 400, // Close animation speed of the banner
@@ -397,7 +470,11 @@
     iOSUniversalApp: true, // If the iOS App is a universal app for both iPad and iPhone, display Smart Banner to iPad users, too.
     appendToSelector: 'body', //Append the banner to a specific selector
     pushSelector: 'html', // What element is going to push the site content down; this is where the banner append animation will start.
-    iosForce: false // Show the banner even on ios >= 6
+    iosForce: false, // Show the banner even on ios >= 6
+    itunesAppId: '',
+    playAppId: '',
+    msAppId: '',
+    kindleAppId: ''
   };
 
   $.smartbanner.Constructor = SmartBanner;
