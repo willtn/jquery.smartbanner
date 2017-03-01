@@ -32,7 +32,7 @@
       if (UA.match(/Safari/i) !== null &&
           (UA.match(/CriOS/i) !== null ||
            UA.match(/FxiOS/i) != null ||
-            window.Number(UA.substr(UA.indexOf('OS ') + 3, 3).replace('_', '.')) < 6)) {
+            window.Number(UA.substr(UA.indexOf('OS ') + 3, 3).replace('_', '.')) < 6 || this.options.iosForce)) {
         // Check webview and native smart banner support (iOS 6+).
         this.type = 'ios';
       }
@@ -396,7 +396,8 @@
     layer: false, // Display as overlay layer or slide down the page
     iOSUniversalApp: true, // If the iOS App is a universal app for both iPad and iPhone, display Smart Banner to iPad users, too.
     appendToSelector: 'body', //Append the banner to a specific selector
-    pushSelector: 'html' // What element is going to push the site content down; this is where the banner append animation will start.
+    pushSelector: 'html', // What element is going to push the site content down; this is where the banner append animation will start.
+    iosForce: false // Show the banner even on ios >= 6
   };
 
   $.smartbanner.Constructor = SmartBanner;
