@@ -1,0 +1,22 @@
+{
+  "name": "jquery.smartbanner",
+  "version": "0.0.1",
+  "main": [
+    "jquery.smartbanner.js",
+    "jquery.smartbanner.css"
+  ],
+  "homepage": "https://github.com/willtn/jquery.smartbanner",
+  "authors": [
+    "Arnold Daniels <arnold@jasny.net>"
+  ],
+  "description": "",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
