@@ -53,16 +53,9 @@
       this.scale = 1;
     }
 
-    this.title = this.options.title
-      ? this.options.title
-      : (meta.data('title') || $('title').text().replace(/\s*[|\-·].*$/, ''));
+    this.title = this.options.title;
 
-    this.author = this.options.author
-      ? this.options.author
-      : (meta.data('author') || ($('meta[name="author"]').length ? $('meta[name="author"]').attr('content') : window.location.hostname));
-
-    this.iconUrl = meta.data('icon-url');
-    this.price = meta.data('price');
+    this.author = this.options.author;
 
     // Set default onInstall callback if not set in options.
     if (typeof this.options.onInstall == 'function') {
@@ -88,7 +81,7 @@
 
     create: function() {
       var iconURL;
-      var price = this.price || this.options.price;
+      var price = this.options.price;
 
       this.parseAppId();
 
@@ -133,8 +126,6 @@
       }
       if (this.options.icon) {
         iconURL = this.options.icon;
-      } else if(this.iconUrl) {
-        iconURL = this.iconUrl;
       } else if ($('link[rel="apple-touch-icon-precomposed"]').length > 0) {
         iconURL = $('link[rel="apple-touch-icon-precomposed"]').attr('href');
         if (this.options.iconGloss == null) {
@@ -310,13 +301,22 @@
     },
 
     parseAppIdFromOptions: function() {
-      var appId = this.type == 'android'
-        ? this.options.playAppId
-        : (this.type == 'ios'
-            ? this.options.itunesAppId
-            : (this.type == 'kindle'
-              ? this.options.kindleAppId
-              : this.options.msAppId));
+      var appId;
+      switch (this.type) {
+        case 'android':
+          appId = this.options.playAppId;
+          break;
+        case 'ios':
+          appId = this.options.itunesAppId;
+          break;
+        case 'kindle':
+          appId = this.options.kindleAppId;
+          break;
+        default:
+          appId= this.options.msAppId;
+          break;
+      }
+      return appId;
     },
 
     parseAppIdFromMeta: function() {
