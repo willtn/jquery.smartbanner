@@ -264,7 +264,11 @@
     close: function(e) {
       e.preventDefault();
       this.hide();
-      this.setCookie('sb-closed', 'true', this.options.daysHidden);
+
+      if (!this.options.debug) {
+        this.setCookie('sb-closed', 'true', this.options.daysHidden);
+      }
+
       this.options.onClose(e);
     },
 
@@ -273,7 +277,11 @@
         this.hide();
       }
       this.launch();
-      this.setCookie('sb-installed', 'true', this.options.daysReminder);
+
+      if (!this.options.debug) {
+        this.setCookie('sb-installed', 'true', this.options.daysReminder);
+      }
+
       this.options.onInstall(e);
     },
 
@@ -474,7 +482,8 @@
     itunesAppId: '',
     playAppId: '',
     msAppId: '',
-    kindleAppId: ''
+    kindleAppId: '',
+    debug: false // In debug mode, no cookie is set
   };
 
   $.smartbanner.Constructor = SmartBanner;
