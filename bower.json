@@ -1,6 +1,6 @@
 {
   "name": "jquery.smartbanner",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": [
     "jquery.smartbanner.js",
     "jquery.smartbanner.css"
